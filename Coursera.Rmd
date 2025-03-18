@@ -1,0 +1,70 @@
+---
+title: "analysis.Rmd"
+author: "Muhamad Firdaus"
+date: "3/12/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+---
+title: "Predicting Weight Lifting Exercise Quality"
+author: "Muhamad Firdaus"
+date: "3/12/2025"
+output: html_document
+---
+
+## **Introduction**
+This project aims to predict the quality of weightlifting exercises using wearable sensor data and machine learning.
+
+## **Data Preprocessing**
+```{r, message=FALSE, warning=FALSE}
+library(caret)
+library(randomForest)
+
+# Load dataset
+train_data <- read.csv("pml-training.csv", na.strings = c("NA", "", "#DIV/0!"))
+test_data <- read.csv("pml-testing.csv", na.strings = c("NA", "", "#DIV/0!"))
+
+# Remove columns with too many missing values
+train_data <- train_data[, colSums(is.na(train_data)) < 0.9 * nrow(train_data)]
+
+# Remove unnecessary columns
+train_data <- train_data[, !grepl("X|timestamp|user_name", names(train_data))]
+
+# Convert target variable to factor
+train_data$classe <- as.factor(train_data$classe)
+set.seed(123)
+trainIndex <- createDataPartition(train_data$classe, p = 0.7, list = FALSE)
+train_set <- train_data[trainIndex, ]
+valid_set <- train_data[-trainIndex, ]
+
+rf_model <- randomForest(classe ~ ., data = train_set, ntree = 100, importance = TRUE)
+rf_model
+pred_valid <- predict(rf_model, newdata = valid_set)
+pred_valid <- factor(pred_valid, levels = levels(valid_set$classe))
+confusionMatrix(pred_valid, valid_set$classe)
+varImpPlot(rf_model)
+test_predictions <- predict(rf_model, test_data)
+test_predictions
